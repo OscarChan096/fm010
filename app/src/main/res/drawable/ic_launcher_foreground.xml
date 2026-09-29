@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Wallet body -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22,34h64c3.3,0 6,2.7 6,6v38c0,3.3 -2.7,6 -6,6H22c-3.3,0 -6,-2.7 -6,-6V40C16,36.7 18.7,34 22,34z" />
+    <!-- Wallet flap -->
+    <path
+        android:fillColor="#EADDFF"
+        android:pathData="M22,44h64v8H22z" />
+    <!-- Dollar sign badge circle -->
+    <path
+        android:fillColor="#6750A4"
+        android:pathData="M54,48c-7.2,0 -13,5.8 -13,13s5.8,13 13,13s13,-5.8 13,-13S61.2,48 54,48z" />
+    <!-- Dollar symbol ($) inside badge -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,53v-1h-2v1c-1.7,0.2 -3,1.6 -3,3.3s1.3,3.1 3,3.3v2.5c-1.2,-0.2 -2,-1.2 -2,-2.5h-2c0,1.7 1.3,3.1 3,3.3v1h2v-1c1.7,-0.2 3,-1.6 3,-3.3s-1.3,-3.1 -3,-3.3v-2.5c1.2,0.2 2,1.2 2,2.5h2C57,54.6 55.7,53.2 54,53z M52,57.9v2c-0.8,-0.2 -1.2,-0.8 -1.2,-1.4s0.4,-1.2 1.2,-1.4V57.9z M56,61.1v-2c0.8,0.2 1.2,0.8 1.2,1.4s-0.4,1.2 -1.2,1.4V61.1z" />
+</vector>
