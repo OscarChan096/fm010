@@ -19,10 +19,12 @@ import com.oscar.fm010.data.model.ExpenseItem
 @Composable
 fun ExpensesScreen(
     expenses: List<ExpenseItem>,
-    onAddExpense: (String, Double, String, String?, Boolean, String) -> Unit,
-    onDeleteExpense: (String) -> Unit
+    onAddExpense: (String, Double, String, String?, Boolean, String, String) -> Unit,
+    onUpdateExpense: (ExpenseItem) -> Unit,
+    onDeleteExpense: (ExpenseItem) -> Unit
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    var expenseToEdit by remember { mutableStateOf<ExpenseItem?>(null) }
 
     Scaffold(
         topBar = {
@@ -79,17 +81,40 @@ fun ExpensesScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(expenses) { expense ->
-                        ExpenseDetailCard(expense = expense, onDelete = { onDeleteExpense(expense.id) })
+                        ExpenseDetailCard(
+                            expense = expense,
+                            onEdit = { expenseToEdit = expense },
+                            onDelete = { onDeleteExpense(expense) }
+                        )
                     }
                 }
             }
 
-            if (showAddDialog) {
-                AddExpenseDialog(
-                    onDismiss = { showAddDialog = false },
-                    onConfirm = { title, amount, dueDate, cutoffDate, isCreditCard, category ->
-                        onAddExpense(title, amount, dueDate, cutoffDate, isCreditCard, category)
+            if (showAddDialog || expenseToEdit != null) {
+                AddEditExpenseDialog(
+                    expenseToEdit = expenseToEdit,
+                    onDismiss = {
                         showAddDialog = false
+                        expenseToEdit = null
+                    },
+                    onConfirm = { title, amount, dueDate, cutoffDate, isCreditCard, category, reminderDays ->
+                        if (expenseToEdit != null) {
+                            onUpdateExpense(
+                                expenseToEdit!!.copy(
+                                    title = title,
+                                    amount = amount,
+                                    dueDate = dueDate,
+                                    cutoffDate = cutoffDate,
+                                    isCreditCard = isCreditCard,
+                                    category = category,
+                                    reminderDays = reminderDays
+                                )
+                            )
+                        } else {
+                            onAddExpense(title, amount, dueDate, cutoffDate, isCreditCard, category, reminderDays)
+                        }
+                        showAddDialog = false
+                        expenseToEdit = null
                     }
                 )
             }
@@ -98,7 +123,11 @@ fun ExpensesScreen(
 }
 
 @Composable
-fun ExpenseDetailCard(expense: ExpenseItem, onDelete: () -> Unit) {
+fun ExpenseDetailCard(
+    expense: ExpenseItem,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -133,12 +162,21 @@ fun ExpenseDetailCard(expense: ExpenseItem, onDelete: () -> Unit) {
                         )
                     }
                 }
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Eliminar",
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
 
@@ -201,25 +239,49 @@ fun ExpenseDetailCard(expense: ExpenseItem, onDelete: () -> Unit) {
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Aviso: ${expense.reminderDays} días antes",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
         }
     }
 }
 
 @Composable
-fun AddExpenseDialog(
+fun AddEditExpenseDialog(
+    expenseToEdit: ExpenseItem? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, Double, String, String?, Boolean, String) -> Unit
+    onConfirm: (String, Double, String, String?, Boolean, String, String) -> Unit
 ) {
-    var title by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
-    var dueDate by remember { mutableStateOf("") }
-    var cutoffDate by remember { mutableStateOf("") }
-    var isCreditCard by remember { mutableStateOf(false) }
-    var category by remember { mutableStateOf("General") }
+    var title by remember { mutableStateOf(expenseToEdit?.title ?: "") }
+    var amount by remember { mutableStateOf(expenseToEdit?.amount?.let { if (it > 0) it.toString() else "" } ?: "") }
+    var dueDate by remember { mutableStateOf(expenseToEdit?.dueDate ?: "") }
+    var cutoffDate by remember { mutableStateOf(expenseToEdit?.cutoffDate ?: "") }
+    var isCreditCard by remember { mutableStateOf(expenseToEdit?.isCreditCard ?: false) }
+    var category by remember { mutableStateOf(expenseToEdit?.category ?: "General") }
+    var reminderDays by remember { mutableStateOf(expenseToEdit?.reminderDays ?: "5, 1") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Agregar Gasto o Pago", fontWeight = FontWeight.Bold) },
+        title = {
+            Text(
+                if (expenseToEdit == null) "Agregar Gasto o Pago" else "Editar Gasto o Pago",
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
             Column(
                 modifier = Modifier
@@ -247,7 +309,7 @@ fun AddExpenseDialog(
                 OutlinedTextField(
                     value = dueDate,
                     onValueChange = { dueDate = it },
-                    label = { Text("Fecha Límite de Pago (ej. 15/10/2025)") },
+                    label = { Text("Fecha Límite de Pago (dd/mm, ej. 15/10)") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -268,7 +330,7 @@ fun AddExpenseDialog(
                     OutlinedTextField(
                         value = cutoffDate,
                         onValueChange = { cutoffDate = it },
-                        label = { Text("Fecha de Corte (ej. 05/10/2025)") },
+                        label = { Text("Fecha de Corte (dd/mm, ej. 05/10)") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -281,6 +343,15 @@ fun AddExpenseDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+
+                OutlinedTextField(
+                    value = reminderDays,
+                    onValueChange = { reminderDays = it },
+                    label = { Text("Días antes para avisar (ej. 5, 1)") },
+                    supportingText = { Text("Por defecto: 5, 1 (avisará 5 días y 1 día antes)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
             }
         },
         confirmButton = {
@@ -288,7 +359,7 @@ fun AddExpenseDialog(
                 onClick = {
                     val parsedAmount = amount.toDoubleOrNull() ?: 0.0
                     if (title.isNotBlank() && parsedAmount > 0.0 && dueDate.isNotBlank()) {
-                        onConfirm(title, parsedAmount, dueDate, cutoffDate, isCreditCard, category)
+                        onConfirm(title, parsedAmount, dueDate, cutoffDate, isCreditCard, category, reminderDays.ifBlank { "5, 1" })
                     }
                 }
             ) {
@@ -302,3 +373,4 @@ fun AddExpenseDialog(
         }
     )
 }
+

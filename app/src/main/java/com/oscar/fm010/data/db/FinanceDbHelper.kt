@@ -5,12 +5,13 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.oscar.fm010.data.model.ExpenseItem
 import com.oscar.fm010.data.model.WalletInfo
+import com.oscar.fm010.util.DateUtils
 
 class FinanceDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         private const val DATABASE_NAME = "finance.db"
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 2
 
         const val TABLE_WALLET = "wallet"
         const val TABLE_EXPENSES = "expenses"
@@ -31,7 +32,8 @@ class FinanceDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                     "due_date TEXT NOT NULL," +
                     "cutoff_date TEXT," +
                     "is_credit_card INTEGER NOT NULL," +
-                    "category TEXT NOT NULL)"
+                    "category TEXT NOT NULL," +
+                    "reminder_days TEXT NOT NULL DEFAULT '5, 1')"
         )
         db.execSQL(
             "CREATE TABLE $TABLE_SETTINGS (" +
@@ -46,24 +48,26 @@ class FinanceDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
         // Insert initial default expenses
         db.execSQL(
-            "INSERT INTO $TABLE_EXPENSES (id, title, amount, due_date, cutoff_date, is_credit_card, category) " +
-                    "VALUES ('1', 'Tarjeta de Crédito Bancomer', 2500.0, '20/11/2025', '10/11/2025', 1, 'Tarjetas')"
+            "INSERT INTO $TABLE_EXPENSES (id, title, amount, due_date, cutoff_date, is_credit_card, category, reminder_days) " +
+                    "VALUES ('1', 'Tarjeta de Crédito Bancomer', 2500.0, '20/11', '10/11', 1, 'Tarjetas', '5, 1')"
         )
         db.execSQL(
-            "INSERT INTO $TABLE_EXPENSES (id, title, amount, due_date, cutoff_date, is_credit_card, category) " +
-                    "VALUES ('2', 'Renta de Departamento', 4500.0, '01/12/2025', NULL, 0, 'Hogar')"
+            "INSERT INTO $TABLE_EXPENSES (id, title, amount, due_date, cutoff_date, is_credit_card, category, reminder_days) " +
+                    "VALUES ('2', 'Renta de Departamento', 4500.0, '01/12', NULL, 0, 'Hogar', '5, 1')"
         )
         db.execSQL(
-            "INSERT INTO $TABLE_EXPENSES (id, title, amount, due_date, cutoff_date, is_credit_card, category) " +
-                    "VALUES ('3', 'Servicio de Luz', 650.0, '25/11/2025', NULL, 0, 'Servicios')"
+            "INSERT INTO $TABLE_EXPENSES (id, title, amount, due_date, cutoff_date, is_credit_card, category, reminder_days) " +
+                    "VALUES ('3', 'Servicio de Luz', 650.0, '25/11', NULL, 0, 'Servicios', '5, 1')"
         )
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_WALLET")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_EXPENSES")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_SETTINGS")
-        onCreate(db)
+        if (oldVersion < 2) {
+            try {
+                db.execSQL("ALTER TABLE $TABLE_EXPENSES ADD COLUMN reminder_days TEXT DEFAULT '5, 1'")
+            } catch (_: Exception) {
+            }
+        }
     }
 
     fun getWallet(): WalletInfo {
@@ -84,10 +88,10 @@ class FinanceDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     fun getExpenses(): List<ExpenseItem> {
         val db = readableDatabase
-        val cursor = db.rawQuery("SELECT id, title, amount, due_date, cutoff_date, is_credit_card, category FROM $TABLE_EXPENSES", null)
-        val list = mutableListOf<ExpenseItem>()
+        val cursor = db.rawQuery("SELECT id, title, amount, due_date, cutoff_date, is_credit_card, category, reminder_days FROM $TABLE_EXPENSES", null)
+        val rawList = mutableListOf<ExpenseItem>()
         while (cursor.moveToNext()) {
-            list.add(
+            rawList.add(
                 ExpenseItem(
                     id = cursor.getString(0),
                     title = cursor.getString(1),
@@ -95,26 +99,42 @@ class FinanceDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                     dueDate = cursor.getString(3),
                     cutoffDate = cursor.getString(4),
                     isCreditCard = cursor.getInt(5) == 1,
-                    category = cursor.getString(6)
+                    category = cursor.getString(6),
+                    reminderDays = if (!cursor.isNull(7)) cursor.getString(7) else "5, 1"
                 )
             )
         }
         cursor.close()
-        return list
+
+        val updatedList = mutableListOf<ExpenseItem>()
+        for (item in rawList) {
+            val updatedItem = DateUtils.updateExpenseDueDateIfNeeded(item)
+            if (updatedItem != item) {
+                saveExpenseDirectly(updatedItem)
+            }
+            updatedList.add(updatedItem)
+        }
+        return updatedList
     }
 
     fun addExpense(expense: ExpenseItem) {
+        val checkedExpense = DateUtils.updateExpenseDueDateIfNeeded(expense)
+        saveExpenseDirectly(checkedExpense)
+    }
+
+    private fun saveExpenseDirectly(expense: ExpenseItem) {
         val db = writableDatabase
         db.execSQL(
-            "INSERT OR REPLACE INTO $TABLE_EXPENSES (id, title, amount, due_date, cutoff_date, is_credit_card, category) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            arrayOf(
+            "INSERT OR REPLACE INTO $TABLE_EXPENSES (id, title, amount, due_date, cutoff_date, is_credit_card, category, reminder_days) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            arrayOf<Any?>(
                 expense.id,
                 expense.title,
                 expense.amount,
                 expense.dueDate,
                 expense.cutoffDate ?: "",
                 if (expense.isCreditCard) 1 else 0,
-                expense.category
+                expense.category,
+                expense.reminderDays
             )
         )
     }

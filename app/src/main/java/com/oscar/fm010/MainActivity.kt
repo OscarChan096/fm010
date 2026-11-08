@@ -1,17 +1,26 @@
 package com.oscar.fm010
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.oscar.fm010.notification.NotificationHelper
+import com.oscar.fm010.ui.about.AboutScreen
 import com.oscar.fm010.ui.expenses.ExpensesScreen
 import com.oscar.fm010.ui.home.HomeScreen
 import com.oscar.fm010.ui.money.MoneyScreen
@@ -24,6 +33,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         RepositoryProvider.initialize(applicationContext)
+        NotificationHelper.createNotificationChannel(applicationContext)
         enableEdgeToEdge()
         setContent {
             val viewModel: FinanceViewModel = viewModel()
@@ -43,6 +53,25 @@ fun FM010App(
     uiState: FinanceUiState = viewModel<FinanceViewModel>().uiState.collectAsState().value
 ) {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    val context = LocalContext.current
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val permissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { }
+
+        LaunchedEffect(Unit) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    LaunchedEffect(uiState.expenses) {
+        if (uiState.expenses.isNotEmpty()) {
+            NotificationHelper.scheduleRemindersForExpenses(context.applicationContext, uiState.expenses)
+        }
+    }
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -74,13 +103,17 @@ fun FM010App(
             )
             AppDestinations.EXPENSES -> ExpensesScreen(
                 expenses = uiState.expenses,
-                onAddExpense = { title, amount, dueDate, cutoffDate, isCreditCard, category ->
-                    viewModel.addExpense(title, amount, dueDate, cutoffDate, isCreditCard, category)
+                onAddExpense = { title, amount, dueDate, cutoffDate, isCreditCard, category, reminderDays ->
+                    viewModel.addExpense(context, title, amount, dueDate, cutoffDate, isCreditCard, category, reminderDays)
                 },
-                onDeleteExpense = { id ->
-                    viewModel.deleteExpense(id)
+                onUpdateExpense = { expense ->
+                    viewModel.updateExpense(context, expense)
+                },
+                onDeleteExpense = { expense ->
+                    viewModel.deleteExpense(context, expense.id, expense.reminderDays)
                 }
             )
+            AppDestinations.ABOUT -> AboutScreen()
         }
     }
 }
@@ -92,4 +125,5 @@ enum class AppDestinations(
     HOME("Dashboard", R.drawable.ic_home),
     MONEY("Mi Dinero", R.drawable.ic_account_box),
     EXPENSES("Gastos/Pagos", R.drawable.ic_favorite),
+    ABOUT("Acerca de", R.drawable.ic_info),
 }

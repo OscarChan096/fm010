@@ -1,23 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <!-- Wallet body -->
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <!-- Soft Drop Shadows -->
+    <group android:translateY="8">
+        <path
+            android:fillColor="#000000"
+            android:fillAlpha="0.3"
+            android:pathData="M 124,300 H 156 A 12,12 0 0,1 168,312 V 380 A 12,12 0 0,1 156,392 H 124 A 12,12 0 0,1 112,380 V 312 A 12,12 0 0,1 124,300 Z" />
+        <path
+            android:fillColor="#000000"
+            android:fillAlpha="0.3"
+            android:pathData="M 212,220 H 244 A 12,12 0 0,1 256,232 V 380 A 12,12 0 0,1 244,392 H 212 A 12,12 0 0,1 200,380 V 232 A 12,12 0 0,1 212,220 Z" />
+        <path
+            android:fillColor="#000000"
+            android:fillAlpha="0.3"
+            android:pathData="M 300,140 H 332 A 12,12 0 0,1 344,152 V 380 A 12,12 0 0,1 332,392 H 300 A 12,12 0 0,1 288,380 V 152 A 12,12 0 0,1 300,140 Z" />
+        <path
+            android:fillColor="#000000"
+            android:fillAlpha="0.3"
+            android:pathData="M 256,160 A 96,96 0 1,0 256,352 A 96,96 0 1,0 256,160 Z" />
+    </group>
+
+    <!-- Foreground Elements -->
+    <!-- Barra 1 (0.6 opacity) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M22,34h64c3.3,0 6,2.7 6,6v38c0,3.3 -2.7,6 -6,6H22c-3.3,0 -6,-2.7 -6,-6V40C16,36.7 18.7,34 22,34z" />
-    <!-- Wallet flap -->
+        android:fillColor="#334155"
+        android:fillAlpha="0.6"
+        android:pathData="M 124,300 H 156 A 12,12 0 0,1 168,312 V 380 A 12,12 0 0,1 156,392 H 124 A 12,12 0 0,1 112,380 V 312 A 12,12 0 0,1 124,300 Z" />
+
+    <!-- Barra 2 (0.8 opacity) -->
     <path
-        android:fillColor="#EADDFF"
-        android:pathData="M22,44h64v8H22z" />
-    <!-- Dollar sign badge circle -->
+        android:fillColor="#334155"
+        android:fillAlpha="0.8"
+        android:pathData="M 212,220 H 244 A 12,12 0 0,1 256,232 V 380 A 12,12 0 0,1 244,392 H 212 A 12,12 0 0,1 200,380 V 232 A 12,12 0 0,1 212,220 Z" />
+
+    <!-- Barra 3 (FinGrad) -->
+    <path android:pathData="M 300,140 H 332 A 12,12 0 0,1 344,152 V 380 A 12,12 0 0,1 332,392 H 300 A 12,12 0 0,1 288,380 V 152 A 12,12 0 0,1 300,140 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="512"
+                android:endX="512"
+                android:endY="0"
+                android:type="linear">
+                <item android:color="#10B981" android:offset="0.0" />
+                <item android:color="#34D399" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Línea de tendencia ascendente -->
     <path
-        android:fillColor="#6750A4"
-        android:pathData="M54,48c-7.2,0 -13,5.8 -13,13s5.8,13 13,13s13,-5.8 13,-13S61.2,48 54,48z" />
-    <!-- Dollar symbol ($) inside badge -->
+        android:strokeColor="#6EE7B7"
+        android:strokeWidth="10"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeAlpha="0.4"
+        android:pathData="M 140,320 L 228,240 L 316,160" />
+
+    <!-- Círculo contenedor central -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,53v-1h-2v1c-1.7,0.2 -3,1.6 -3,3.3s1.3,3.1 3,3.3v2.5c-1.2,-0.2 -2,-1.2 -2,-2.5h-2c0,1.7 1.3,3.1 3,3.3v1h2v-1c1.7,-0.2 3,-1.6 3,-3.3s-1.3,-3.1 -3,-3.3v-2.5c1.2,0.2 2,1.2 2,2.5h2C57,54.6 55.7,53.2 54,53z M52,57.9v2c-0.8,-0.2 -1.2,-0.8 -1.2,-1.4s0.4,-1.2 1.2,-1.4V57.9z M56,61.1v-2c0.8,0.2 1.2,0.8 1.2,1.4s-0.4,1.2 -1.2,1.4V61.1z" />
+        android:fillColor="#0F172A"
+        android:strokeWidth="12"
+        android:pathData="M 256,160 A 96,96 0 1,0 256,352 A 96,96 0 1,0 256,160 Z">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="0"
+                android:startY="512"
+                android:endX="512"
+                android:endY="0"
+                android:type="linear">
+                <item android:color="#10B981" android:offset="0.0" />
+                <item android:color="#34D399" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Símbolo "$" estilizado -->
+    <path
+        android:strokeWidth="16"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 256,196 V 316 M 286,216 H 236 C 221.8,216 210,227.8 210,242 C 210,256.2 221.8,268 236,268 H 276 C 290.2,268 302,279.8 302,294 C 302,308.2 290.2,320 276,320 H 220">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="0"
+                android:startY="512"
+                android:endX="512"
+                android:endY="0"
+                android:type="linear">
+                <item android:color="#10B981" android:offset="0.0" />
+                <item android:color="#34D399" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
 </vector>

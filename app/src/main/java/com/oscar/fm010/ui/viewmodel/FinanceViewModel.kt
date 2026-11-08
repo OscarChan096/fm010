@@ -52,12 +52,14 @@ class FinanceViewModel(
     }
 
     fun addExpense(
+        context: Context,
         title: String,
         amount: Double,
         dueDate: String,
         cutoffDate: String?,
         isCreditCard: Boolean,
-        category: String
+        category: String,
+        reminderDays: String = "5, 1"
     ) {
         viewModelScope.launch {
             val expense = ExpenseItem(
@@ -66,21 +68,25 @@ class FinanceViewModel(
                 dueDate = dueDate,
                 cutoffDate = cutoffDate.takeIf { isCreditCard && !it.isNullOrBlank() },
                 isCreditCard = isCreditCard,
-                category = category
+                category = category,
+                reminderDays = reminderDays.ifBlank { "5, 1" }
             )
             repository.addExpense(expense)
+            com.oscar.fm010.notification.NotificationHelper.scheduleRemindersForExpense(context.applicationContext, expense)
         }
     }
 
-    fun deleteExpense(id: String) {
+    fun deleteExpense(context: Context, id: String, reminderDays: String = "5, 1") {
         viewModelScope.launch {
             repository.deleteExpense(id)
+            com.oscar.fm010.notification.NotificationHelper.cancelRemindersForExpense(context.applicationContext, id, reminderDays)
         }
     }
 
-    fun updateExpense(expense: ExpenseItem) {
+    fun updateExpense(context: Context, expense: ExpenseItem) {
         viewModelScope.launch {
             repository.updateExpense(expense)
+            com.oscar.fm010.notification.NotificationHelper.scheduleRemindersForExpense(context.applicationContext, expense)
         }
     }
 
